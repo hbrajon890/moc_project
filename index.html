@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Escape - Interactive Evacuation Route Simulator</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2310b981'><path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/></svg>">
+</head>
+<body class="theme-dark">
+  <!-- Top Navigation Header -->
+  <header class="app-header">
+    <div class="header-branding">
+      <div class="header-logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="M9 12l2 2 4-4"/>
+        </svg>
+      </div>
+      <div class="header-titles">
+        <h1 class="brand-title">
+          <span class="brand-name" data-i18n="app_title">SMART ESCAPE</span>
+          <span class="badge-tag" data-i18n="badge_simulator">SIMULATOR</span>
+        </h1>
+        <p class="brand-subtitle" data-i18n="app_subtitle">Interactive Evacuation Route Simulator</p>
+      </div>
+    </div>
+
+    <!-- Header Action Center -->
+    <div class="header-actions">
+      <!-- System Status Indicator -->
+      <div class="status-indicator" id="system-status-indicator">
+        <span class="status-dot green"></span>
+        <span class="status-text" id="system-status-text" data-i18n="status_ready">System Ready</span>
+      </div>
+
+      <!-- Reset Simulation Button -->
+      <button id="btn-header-reset" class="btn btn-outline" title="Reset to original initial_state from imported JSON">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+          <path d="M3 3v5h5"/>
+        </svg>
+        <span data-i18n="btn_reset">Reset</span>
+      </button>
+
+      <!-- Help / Guide Modal Button -->
+      <button id="btn-help-modal" class="btn btn-icon" title="Documentation & Guide" aria-label="Open Guide">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </button>
+
+      <!-- Language Selector Toggle -->
+      <div class="language-toggle" role="group" aria-label="Language selection">
+        <button id="lang-en" class="lang-btn active" data-lang="en">English</button>
+        <button id="lang-bn" class="lang-btn" data-lang="bn">বাংলা</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Educational Simulation Notice Banner -->
+  <div class="notice-bar">
+    <div class="notice-content">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span data-i18n="disclaimer_notice">Educational simulation only — NOT a certified real-world evacuation planning tool.</span>
+    </div>
+  </div>
+
+  <!-- Global Notification / Toast Container -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- Main Application Container -->
+  <main class="app-layout">
+    <!-- LEFT PANEL: Interactive SVG Building Map -->
+    <section class="map-panel" aria-label="Interactive Building Map">
+      <!-- Map Toolbar -->
+      <div class="panel-header map-header">
+        <div class="map-title-group">
+          <h2 class="panel-title" data-i18n="map_title">Building Evacuation Map</h2>
+          <span class="building-name-pill" id="building-display-name">Innovation Complex - Level 1</span>
+        </div>
+
+        <div class="map-toolbar">
+          <!-- Interaction Mode: Select Start vs Toggle Hazard -->
+          <div class="segmented-control" role="group" aria-label="Map Click Mode">
+            <button id="mode-select-start" class="segment-btn active" data-mode="start" title="Click on map node to set start location">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polygon points="10 8 16 12 10 16 10 8"/>
+              </svg>
+              <span data-i18n="mode_start">Select Start</span>
+            </button>
+            <button id="mode-toggle-hazard" class="segment-btn" data-mode="hazard" title="Click on nodes or corridors to toggle hazards">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <span data-i18n="mode_hazard">Toggle Hazard</span>
+            </button>
+          </div>
+
+          <!-- View Controls: Zoom In, Zoom Out, Fit, Reset Pan -->
+          <div class="zoom-controls">
+            <button id="btn-zoom-in" class="btn btn-icon btn-sm" title="Zoom In" aria-label="Zoom In">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+            <button id="btn-zoom-out" class="btn btn-icon btn-sm" title="Zoom Out" aria-label="Zoom Out">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+            <button id="btn-zoom-fit" class="btn btn-icon btn-sm" title="Fit to Viewport" aria-label="Fit to Viewport">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Map Canvas Container -->
+      <div class="map-viewport-wrapper" id="map-viewport">
+        <!-- SVG Container -->
+        <svg id="building-svg" class="building-svg" preserveAspectRatio="xMidYMid meet">
+          <!-- Definitions for patterns, markers, and filters -->
+          <defs>
+            <!-- Drop Shadow Filter for Active Route -->
+            <filter id="route-glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#10b981" flood-opacity="0.8"/>
+            </filter>
+            
+            <filter id="hazard-glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#ef4444" flood-opacity="0.9"/>
+            </filter>
+
+            <filter id="start-glow" x="-30%" y="-30%" width="160%" height="160%">
+              <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#a855f7" flood-opacity="0.9"/>
+            </filter>
+
+            <!-- Hazard Stripe Pattern for Blocked Elements -->
+            <pattern id="hazard-stripes" width="10" height="10" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+              <line x1="0" y1="0" x2="0" y2="10" stroke="#ef4444" stroke-width="3" stroke-opacity="0.4"/>
+            </pattern>
+
+            <!-- Route Flow Gradient -->
+            <linearGradient id="route-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#38bdf8"/>
+              <stop offset="100%" stop-color="#10b981"/>
+            </linearGradient>
+          </defs>
+
+          <!-- SVG Background Grid -->
+          <g id="svg-grid" class="svg-grid-layer"></g>
+
+          <!-- SVG Content Group (Subject to Pan & Zoom transforms) -->
+          <g id="svg-zoom-group">
+            <!-- Layer 1: Normal and Blocked Corridors (Edges) -->
+            <g id="svg-edges-layer" class="edges-layer"></g>
+
+            <!-- Layer 2: Active Evacuation Route Highlighting -->
+            <g id="svg-route-layer" class="route-layer"></g>
+
+            <!-- Layer 3: Edge Cost Badges -->
+            <g id="svg-edge-labels-layer" class="edge-labels-layer"></g>
+
+            <!-- Layer 4: Nodes (Rooms, Junctions, Exits) -->
+            <g id="svg-nodes-layer" class="nodes-layer"></g>
+
+            <!-- Layer 5: Start Location Marker Badge -->
+            <g id="svg-start-marker-layer" class="start-marker-layer"></g>
+          </g>
+        </svg>
+
+        <!-- Node Details Floating Tooltip -->
+        <div id="map-tooltip" class="map-tooltip" style="display: none;" role="tooltip"></div>
+
+        <!-- Map Navigation Hint -->
+        <div class="map-hint-pill">
+          <span data-i18n="map_hint">Click node to interact • Drag to pan • Scroll to zoom</span>
+        </div>
+      </div>
+
+      <!-- Map Visual Legend -->
+      <footer class="map-legend">
+        <div class="legend-item">
+          <span class="legend-symbol room-symbol"></span>
+          <span data-i18n="legend_room">Room</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-symbol junction-symbol"></span>
+          <span data-i18n="legend_junction">Junction</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-symbol exit-symbol"></span>
+          <span data-i18n="legend_exit">Open Exit</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-symbol route-symbol"></span>
+          <span data-i18n="legend_route">Active Route</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-symbol blocked-node-symbol"></span>
+          <span data-i18n="legend_blocked_node">Blocked Node</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-symbol blocked-edge-symbol"></span>
+          <span data-i18n="legend_blocked_edge">Blocked Corridor</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-symbol closed-exit-symbol"></span>
+          <span data-i18n="legend_closed_exit">Closed Exit</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-symbol start-symbol"></span>
+          <span data-i18n="legend_start">Start</span>
+        </div>
+      </footer>
+    </section>
+
+    <!-- RIGHT PANEL: Dashboard Controls & Route Information -->
+    <aside class="sidebar-panel" aria-label="Controls and Evacuation Dashboard">
+
+      <!-- SECTION 1: Current Route & Evacuation Status (PRIMARY FOCUS) -->
+      <div class="dashboard-card status-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+              <polyline points="2 17 12 22 22 17"/>
+              <polyline points="2 12 12 17 22 12"/>
+            </svg>
+            <h3 class="card-title" data-i18n="route_summary_title">Current Evacuation Route</h3>
+          </div>
+          <div id="route-badge-container">
+            <span id="route-status-pill" class="pill pill-success" data-i18n="status_route_active">Active Route</span>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <!-- Failure Banner (Shown when no route or start blocked) -->
+          <div id="route-alert-banner" class="alert-banner" style="display: none;" role="alert">
+            <div class="alert-icon">
+              <svg id="alert-icon-svg" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            </div>
+            <div class="alert-message-box">
+              <div id="alert-title" class="alert-title">No route available</div>
+              <div id="alert-description" class="alert-desc">All paths to open exits are impassable or closed.</div>
+            </div>
+          </div>
+
+          <!-- Successful Route Visual Display -->
+          <div id="route-success-view" class="route-success-view">
+            <!-- Total Route Cost Metric Card -->
+            <div class="metric-row">
+              <div class="metric-box cost-metric">
+                <span class="metric-label" data-i18n="label_total_cost">TOTAL ROUTE COST</span>
+                <div class="metric-value-wrap">
+                  <span id="total-cost-value" class="metric-value">7</span>
+                  <span class="metric-unit" data-i18n="unit_cost_points">units</span>
+                </div>
+              </div>
+              <div class="metric-box hops-metric">
+                <span class="metric-label" data-i18n="label_route_hops">CORRIDORS</span>
+                <div class="metric-value-wrap">
+                  <span id="route-hops-value" class="metric-value">3</span>
+                  <span class="metric-unit" data-i18n="unit_hops">hops</span>
+                </div>
+              </div>
+              <div class="metric-box target-metric">
+                <span class="metric-label" data-i18n="label_target_exit">DESTINATION EXIT</span>
+                <div class="metric-value-wrap">
+                  <span id="target-exit-value" class="metric-value highlight">E1</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Route Sequence Breadcrumb / Path Flow -->
+            <div class="sequence-section">
+              <span class="section-micro-label" data-i18n="label_path_sequence">ROUTE NODE SEQUENCE</span>
+              <div id="route-sequence-chips" class="route-sequence-container">
+                <!-- Dynamically populated e.g. R1 -> C1 -> C2 -> E1 -->
+              </div>
+            </div>
+
+            <!-- Step-by-Step Traversal Breakdown Table -->
+            <div class="step-table-container">
+              <span class="section-micro-label" data-i18n="label_step_breakdown">STEP-BY-STEP CORRIDOR BREAKDOWN</span>
+              <div id="route-steps-list" class="route-steps-list">
+                <!-- Dynamically generated rows -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 2: Start Location Selection -->
+      <div class="dashboard-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polygon points="10 8 16 12 10 16 10 8"/>
+            </svg>
+            <h3 class="card-title" data-i18n="start_location_title">Start Location</h3>
+          </div>
+          <span class="subtle-tag" data-i18n="rule_start_notice">Rooms & Junctions Only</span>
+        </div>
+
+        <div class="card-body">
+          <div class="form-group">
+            <label for="select-start-node" class="form-label" data-i18n="label_select_start">Choose Starting Room or Junction:</label>
+            <div class="select-wrapper">
+              <select id="select-start-node" class="form-select">
+                <!-- Dynamically populated with unblocked rooms and junctions -->
+              </select>
+            </div>
+          </div>
+
+          <!-- Quick Selector Chips for available rooms -->
+          <div class="quick-chip-group">
+            <span class="chip-label" data-i18n="quick_pick">Quick Pick:</span>
+            <div id="quick-start-chips" class="quick-chips-wrapper">
+              <!-- Dynamically rendered room buttons -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 3: Hazard Controls (Interactive Toggles) -->
+      <div class="dashboard-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <h3 class="card-title" data-i18n="hazard_control_title">Hazard Controls</h3>
+          </div>
+          <div class="hazard-header-actions">
+            <button id="btn-clear-hazards" class="btn btn-sm btn-ghost" title="Clear all active hazards" data-i18n="btn_clear_hazards">Clear All</button>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <!-- Hazard Category Tabs -->
+          <div class="tabs-nav" role="tablist">
+            <button class="tab-btn active" data-tab="tab-rooms" role="tab" aria-selected="true">
+              <span data-i18n="tab_rooms">Rooms</span>
+              <span class="tab-badge" id="badge-count-rooms">0</span>
+            </button>
+            <button class="tab-btn" data-tab="tab-junctions" role="tab" aria-selected="false">
+              <span data-i18n="tab_junctions">Junctions</span>
+              <span class="tab-badge" id="badge-count-junctions">0</span>
+            </button>
+            <button class="tab-btn" data-tab="tab-corridors" role="tab" aria-selected="false">
+              <span data-i18n="tab_corridors">Corridors</span>
+              <span class="tab-badge" id="badge-count-corridors">0</span>
+            </button>
+            <button class="tab-btn" data-tab="tab-exits" role="tab" aria-selected="false">
+              <span data-i18n="tab_exits">Exits</span>
+              <span class="tab-badge" id="badge-count-exits">0</span>
+            </button>
+          </div>
+
+          <!-- Hazard Filter / Search -->
+          <div class="filter-input-wrap">
+            <input type="text" id="hazard-search-input" class="form-input search-input" placeholder="Search hazards by ID or label..." data-i18n-ph="placeholder_search_hazards">
+          </div>
+
+          <!-- Tab Content Containers -->
+          <div class="tab-content-area">
+            <!-- Rooms Tab -->
+            <div id="tab-rooms" class="tab-pane active" role="tabpanel">
+              <div id="list-hazard-rooms" class="hazard-toggle-list">
+                <!-- Dynamically generated room toggles -->
+              </div>
+            </div>
+
+            <!-- Junctions Tab -->
+            <div id="tab-junctions" class="tab-pane" role="tabpanel">
+              <div id="list-hazard-junctions" class="hazard-toggle-list">
+                <!-- Dynamically generated junction toggles -->
+              </div>
+            </div>
+
+            <!-- Corridors Tab -->
+            <div id="tab-corridors" class="tab-pane" role="tabpanel">
+              <div id="list-hazard-corridors" class="hazard-toggle-list">
+                <!-- Dynamically generated corridor toggles -->
+              </div>
+            </div>
+
+            <!-- Exits Tab -->
+            <div id="tab-exits" class="tab-pane" role="tabpanel">
+              <div id="list-hazard-exits" class="hazard-toggle-list">
+                <!-- Dynamically generated exit toggles -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 4: Benchmark Quick Test Runner (Section 10 Requirements) -->
+      <div class="dashboard-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            <h3 class="card-title" data-i18n="benchmark_test_title">Benchmark Test Cases</h3>
+          </div>
+          <span class="subtle-tag" data-i18n="tag_competition_spec">Spec Section 10</span>
+        </div>
+
+        <div class="card-body">
+          <p class="section-help-text" data-i18n="benchmark_instructions">
+            Test the required Section 10 scenarios with one click on the sample building:
+          </p>
+          <div class="test-cases-grid">
+            <button class="btn btn-test-case" data-test="1">
+              <span class="test-badge">Case 1</span>
+              <span class="test-desc">Start R1 &rarr; E1 (Cost: 7)</span>
+            </button>
+            <button class="btn btn-test-case" data-test="2">
+              <span class="test-badge">Case 2</span>
+              <span class="test-desc">Block C2 &rarr; E2 (Cost: 11)</span>
+            </button>
+            <button class="btn btn-test-case" data-test="3">
+              <span class="test-badge">Case 3</span>
+              <span class="test-desc">Close E1 & E2 &rarr; No route</span>
+            </button>
+            <button class="btn btn-test-case" data-test="4">
+              <span class="test-badge">Case 4</span>
+              <span class="test-desc">Start R2 &rarr; E2 (Cost: 7)</span>
+            </button>
+            <button class="btn btn-test-case" data-test="5">
+              <span class="test-badge">Case 5</span>
+              <span class="test-desc">Start R1, Block R1 &rarr; Blocked</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 5: Building JSON Import & Presets -->
+      <div class="dashboard-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <h3 class="card-title" data-i18n="import_card_title">Building Data Import</h3>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <!-- Preset Dataset Selector -->
+          <div class="form-group">
+            <label for="select-preset-building" class="form-label" data-i18n="label_preset_building">Load Preset Dataset:</label>
+            <div class="select-wrapper">
+              <select id="select-preset-building" class="form-select">
+                <option value="benchmark" selected>Innovation Complex (Section 10 Benchmark)</option>
+                <option value="hospital">Metro General Hospital (16 Nodes, 3 Exits)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Drag and Drop Dropzone -->
+          <div id="file-dropzone" class="file-dropzone">
+            <input type="file" id="file-input-json" accept=".json" class="file-input-hidden" aria-label="Upload building.json">
+            <div class="dropzone-content">
+              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/>
+                <path d="M12 12v9"/>
+                <path d="m16 16-4-4-4 4"/>
+              </svg>
+              <div class="dropzone-text">
+                <strong data-i18n="dropzone_prompt">Drop building.json here</strong>
+                <span data-i18n="dropzone_or">or click to browse from device</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- File Import Error Alert (if malformed JSON) -->
+          <div id="json-error-banner" class="alert-banner alert-danger" style="display: none;" role="alert">
+            <div class="alert-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+              </svg>
+            </div>
+            <div class="alert-message-box">
+              <div id="json-error-title" class="alert-title">Invalid Building JSON</div>
+              <div id="json-error-msg" class="alert-desc">Details of the schema validation error will appear here.</div>
+            </div>
+            <button id="btn-dismiss-json-error" class="btn btn-icon btn-sm" aria-label="Dismiss error">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+
+          <!-- Export JSON Button -->
+          <div class="export-actions">
+            <button id="btn-export-json" class="btn btn-outline btn-sm w-100">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              <span data-i18n="btn_export_json">Export Current Graph State JSON</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+  </main>
+
+  <!-- Help & Rules Modal Dialog -->
+  <dialog id="help-modal" class="modal-dialog">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" data-i18n="help_modal_title">Smart Escape Guide & Documentation</h3>
+        <button id="btn-close-modal" class="btn btn-icon" aria-label="Close dialog">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <h4 data-i18n="help_sec1_title">1. Evacuation Routing Rules</h4>
+        <p data-i18n="help_sec1_p">
+          Smart Escape uses Dijkstra's shortest path algorithm. Route costs are calculated <strong>strictly by summing edge costs</strong>, never from visual pixel distances or node counts.
+        </p>
+
+        <h4 data-i18n="help_sec2_title">2. Hazard Mechanics</h4>
+        <ul>
+          <li data-i18n="help_sec2_l1"><strong>Blocked Room/Junction:</strong> Completely impassable. Cannot be entered or crossed; all connected corridors become unusable.</li>
+          <li data-i18n="help_sec2_l2"><strong>Blocked Corridor:</strong> Only that specific corridor is unusable. Endpoint nodes remain accessible via other routes.</li>
+          <li data-i18n="help_sec2_l3"><strong>Closed Exit:</strong> Cannot serve as an exit or as an intermediate pass-through node.</li>
+        </ul>
+
+        <h4 data-i18n="help_sec3_title">3. Tie-breaking Determinism</h4>
+        <ul>
+          <li data-i18n="help_sec3_l1">If two exits have equal lowest total cost, the lexicographically smaller exit ID is selected (e.g. E1 over E2).</li>
+          <li data-i18n="help_sec3_l2">If two routes to the same exit have equal cost, the lexicographically smaller node sequence is selected.</li>
+        </ul>
+
+        <h4 data-i18n="help_sec4_title">4. Supported JSON Schema Limits</h4>
+        <ul>
+          <li data-i18n="help_sec4_l1">Nodes: 2 to 60 (at least one room/junction, at least one exit).</li>
+          <li data-i18n="help_sec4_l2">Edges: 1 to 150 undirected edges. Self-loops and repeated node pairs are prohibited.</li>
+          <li data-i18n="help_sec4_l3">Edge costs must be positive numbers (> 0).</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-modal-ok" class="btn btn-primary" data-i18n="btn_got_it">Got it</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Application Script -->
+  <script src="script.js"></script>
+</body>
+</html>

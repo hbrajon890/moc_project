@@ -1,0 +1,50 @@
+{
+  "building": {
+    "name": "Metro General Hospital - Ward 3",
+    "description": "Multi-corridor hospital facility with 3 emergency exits and multiple wings"
+  },
+  "nodes": [
+    { "id": "ICU_1", "label": "ICU Ward 1", "type": "room", "x": 100, "y": 100 },
+    { "id": "SURG_2", "label": "Surgical Suite", "type": "room", "x": 100, "y": 250 },
+    { "id": "PEDS_3", "label": "Pediatrics", "type": "room", "x": 100, "y": 420 },
+    { "id": "LAB_4", "label": "Diagnostic Lab", "type": "room", "x": 100, "y": 560 },
+    { "id": "J_NW", "label": "NW Corridor", "type": "junction", "x": 260, "y": 100 },
+    { "id": "J_W", "label": "West Hub", "type": "junction", "x": 260, "y": 250 },
+    { "id": "J_SW", "label": "SW Corridor", "type": "junction", "x": 260, "y": 420 },
+    { "id": "J_CTR", "label": "Central Lobby", "type": "junction", "x": 420, "y": 280 },
+    { "id": "STAFF_5", "label": "Staff Lounge", "type": "room", "x": 420, "y": 100 },
+    { "id": "PHARM_6", "label": "Pharmacy", "type": "room", "x": 420, "y": 480 },
+    { "id": "J_NE", "label": "NE Hallway", "type": "junction", "x": 580, "y": 120 },
+    { "id": "J_E", "label": "East Wing", "type": "junction", "x": 580, "y": 280 },
+    { "id": "J_SE", "label": "SE Hallway", "type": "junction", "x": 580, "y": 460 },
+    { "id": "EXIT_NORTH", "label": "North Fire Escape", "type": "exit", "x": 750, "y": 120 },
+    { "id": "EXIT_EAST", "label": "Main East Exit", "type": "exit", "x": 750, "y": 280 },
+    { "id": "EXIT_SOUTH", "label": "South Ambulance Bay", "type": "exit", "x": 750, "y": 460 }
+  ],
+  "edges": [
+    { "id": "e_icu_nw", "from": "ICU_1", "to": "J_NW", "cost": 3 },
+    { "id": "e_surg_w", "from": "SURG_2", "to": "J_W", "cost": 2 },
+    { "id": "e_peds_sw", "from": "PEDS_3", "to": "J_SW", "cost": 3 },
+    { "id": "e_lab_sw", "from": "LAB_4", "to": "J_SW", "cost": 4 },
+    { "id": "e_nw_w", "from": "J_NW", "to": "J_W", "cost": 4 },
+    { "id": "e_w_sw", "from": "J_W", "to": "J_SW", "cost": 4 },
+    { "id": "e_nw_staff", "from": "J_NW", "to": "STAFF_5", "cost": 5 },
+    { "id": "e_w_ctr", "from": "J_W", "to": "J_CTR", "cost": 5 },
+    { "id": "e_sw_pharm", "from": "J_SW", "to": "PHARM_6", "cost": 5 },
+    { "id": "e_staff_ne", "from": "STAFF_5", "to": "J_NE", "cost": 4 },
+    { "id": "e_ctr_ne", "from": "J_CTR", "to": "J_NE", "cost": 4 },
+    { "id": "e_ctr_e", "from": "J_CTR", "to": "J_E", "cost": 3 },
+    { "id": "e_ctr_se", "from": "J_CTR", "to": "J_SE", "cost": 4 },
+    { "id": "e_pharm_se", "from": "PHARM_6", "to": "J_SE", "cost": 3 },
+    { "id": "e_ne_exit_n", "from": "J_NE", "to": "EXIT_NORTH", "cost": 3 },
+    { "id": "e_e_exit_e", "from": "J_E", "to": "EXIT_EAST", "cost": 2 },
+    { "id": "e_se_exit_s", "from": "J_SE", "to": "EXIT_SOUTH", "cost": 3 },
+    { "id": "e_ne_e", "from": "J_NE", "to": "J_E", "cost": 3 },
+    { "id": "e_e_se", "from": "J_E", "to": "J_SE", "cost": 3 }
+  ],
+  "initial_state": {
+    "blocked_nodes": ["PHARM_6"],
+    "blocked_edges": ["e_nw_w"],
+    "closed_exits": ["EXIT_NORTH"]
+  }
+}

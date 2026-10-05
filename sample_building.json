@@ -1,0 +1,30 @@
+{
+  "building": {
+    "name": "Innovation Complex - Level 1",
+    "description": "Standard benchmark test building for evacuation routing"
+  },
+  "nodes": [
+    { "id": "R1", "label": "Room 1 (Research Lab)", "type": "room", "x": 100, "y": 140 },
+    { "id": "R2", "label": "Room 2 (Conference)", "type": "room", "x": 100, "y": 360 },
+    { "id": "C1", "label": "Junction C1 (North Hub)", "type": "junction", "x": 260, "y": 140 },
+    { "id": "C2", "label": "Junction C2 (East Corridor)", "type": "junction", "x": 420, "y": 140 },
+    { "id": "C3", "label": "Junction C3 (Central Hub)", "type": "junction", "x": 260, "y": 360 },
+    { "id": "C4", "label": "Junction C4 (South Corridor)", "type": "junction", "x": 420, "y": 360 },
+    { "id": "E1", "label": "Exit 1 (North Gate)", "type": "exit", "x": 580, "y": 140 },
+    { "id": "E2", "label": "Exit 2 (South Gate)", "type": "exit", "x": 580, "y": 360 }
+  ],
+  "edges": [
+    { "id": "edge_R1_C1", "from": "R1", "to": "C1", "cost": 2 },
+    { "id": "edge_C1_C2", "from": "C1", "to": "C2", "cost": 3 },
+    { "id": "edge_C2_E1", "from": "C2", "to": "E1", "cost": 2 },
+    { "id": "edge_C1_C3", "from": "C1", "to": "C3", "cost": 4 },
+    { "id": "edge_R2_C3", "from": "R2", "to": "C3", "cost": 2 },
+    { "id": "edge_C3_C4", "from": "C3", "to": "C4", "cost": 3 },
+    { "id": "edge_C4_E2", "from": "C4", "to": "E2", "cost": 2 }
+  ],
+  "initial_state": {
+    "blocked_nodes": [],
+    "blocked_edges": [],
+    "closed_exits": []
+  }
+}
